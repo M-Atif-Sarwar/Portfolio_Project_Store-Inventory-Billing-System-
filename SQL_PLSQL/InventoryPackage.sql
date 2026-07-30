@@ -17,6 +17,8 @@ CREATE OR REPLACE PACKAGE pkg_inventory AS
     --procedure to get data from json file and insert into inventory table
     -- PROCEDURE get_data_from_json_and_insert(p_json IN CLOB,status OUT VARCHAR2);
 
+    PROCEDURE invertory_item_DELETE(item_id IN inventory.Product_ID%TYPE ,message OUT VARCHAR2);
+
    
 END pkg_inventory;
 /
@@ -45,6 +47,33 @@ CREATE OR REPLACE PACKAGE BODY pkg_inventory AS
           log_activity('ERROR', 'Inventory', NULL, 'Error inserting inventory item: ' || SQLERRM, SQLCODE);
            
     END insert_inventory_item;
+
+
+
+-- delete procedure to delete inventory item based on item_id
+    PROCEDURE invertory_item_DELETE(item_id IN inventory.Product_ID%TYPE ,message OUT VARCHAR2) IS
+    BEGIN
+        DELETE FROM inventory WHERE Product_ID = item_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            message := 'No inventory item found with ID: ' || item_id;
+            log_activity('ERROR', 'Inventory', NULL, 'No inventory item found with ID: ' || item_id, NULL);
+            RETURN ;
+        END IF;
+
+        COMMIT;
+
+        message := 'Inventory item deleted successfully.';
+
+        log_activity('DELETE', 'Inventory', NULL, 'Deleted inventory item with ID: ' || item_id, NULL);
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            message := 'Error deleting inventory item: ' || SQLERRM;
+
+            log_activity('ERROR', 'Inventory', NULL, 'Error deleting inventory item with ID: ' || item_id || '. Error: ' || SQLERRM, SQLCODE);
+
+    END invertory_item_DELETE;
 
 END pkg_inventory;
 /

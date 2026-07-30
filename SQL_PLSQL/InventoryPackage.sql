@@ -9,6 +9,15 @@ CREATE OR REPLACE PACKAGE pkg_inventory AS
          price NUMBER(10,2)
      );
 
+     Type inventory_item_update_record IS RECORD (
+         product_id NUMBER,
+         product_name VARCHAR2(100),
+         flavor VARCHAR2(100),
+         Product_size VARCHAR2(50),
+         quantity NUMBER,
+         price NUMBER(10,2)
+     );
+
      TYPE inventory_list IS TABLE OF inventory_item INDEX BY PLS_INTEGER;
 
 
@@ -18,6 +27,8 @@ CREATE OR REPLACE PACKAGE pkg_inventory AS
     -- PROCEDURE get_data_from_json_and_insert(p_json IN CLOB,status OUT VARCHAR2);
 
     PROCEDURE invertory_item_DELETE(item_id IN inventory.Product_ID%TYPE ,message OUT VARCHAR2);
+
+    PROCEDURE inventory_item_UPDATE(p_item IN inventory_item_update_record, message OUT VARCHAR2);
 
    
 END pkg_inventory;
@@ -74,6 +85,38 @@ CREATE OR REPLACE PACKAGE BODY pkg_inventory AS
             log_activity('ERROR', 'Inventory', NULL, 'Error deleting inventory item with ID: ' || item_id || '. Error: ' || SQLERRM, SQLCODE);
 
     END invertory_item_DELETE;
+
+--inventory item update procedure
+PROCEDURE inventory_item_UPDATE(p_item IN inventory_item_update_record, message OUT VARCHAR2) IS
+BEGIN
+    UPDATE inventory
+    SET Product_Name = p_item.product_name,
+        Product_Flavor = p_item.flavor,
+        Product_Size = p_item.Product_size,
+        Product_Quantity = p_item.quantity,
+        Product_Price = p_item.price
+    WHERE Product_ID = p_item.product_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        message := 'No inventory item found with ID: ' || p_item.product_id;
+        log_activity('ERROR', 'Inventory', NULL, 'No inventory item found with ID: ' || p_item.product_id, NULL);
+        RETURN ;
+    END IF;
+
+    COMMIT;
+
+    message := 'Inventory item updated successfully.';
+
+    log_activity('UPDATE', 'Inventory', NULL, 'Updated inventory item with ID: ' || p_item.product_id, NULL); 
+
+    EXCEPTION 
+        WHEN OTHERS THEN
+            ROLLBACK;
+            message := 'Error updating inventory item: ' || SQLERRM;
+
+            log_activity('ERROR', 'Inventory', NULL, 'Error updating inventory item with ID: ' || p_item.product_id || '. Error: ' || SQLERRM, SQLCODE);
+    
+    END inventory_item_UPDATE;
 
 END pkg_inventory;
 /

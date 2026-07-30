@@ -25,11 +25,9 @@ BEGIN
 -- price validations 
     IF :NEW.Product_Price < 0 THEN
         RAISE Invalid_Price;
-
-    ELSE IF :NEW.Product_Price IS NULL THEN
+    ELSIF :NEW.Product_Price IS NULL THEN
         RAISE NULL_Price_Error;
-
-    ELSE IF :NEW.Product_Price = 0 THEN
+    ELSIF :NEW.Product_Price = 0 THEN
         RAISE ZERO_Price_Error;
     END IF;
 
